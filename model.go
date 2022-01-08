@@ -14,7 +14,7 @@ type EmployeeModel struct {
 
 type ResponseModel struct {
 	IsSuccess   bool        `json:"isSuccess"`
-	Message     string      `json:"message"`
-	Date        interface{} `json:"data"`
-	SystemError string      `json:"systemError"`
+	Message     string      `json:"message,omitempty"`
+	Data        interface{} `json:"data,omitempty"`
+	SystemError string      `json:"systemError,omitempty"`
 }

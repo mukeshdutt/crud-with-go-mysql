@@ -15,7 +15,7 @@ func getConnection() *sql.DB {
 	return db
 }
 
-func AllEmployees() []domain.Employee {
+func GetAllEmployees() []domain.Employee {
 	var emps []domain.Employee
 
 	result, err := getConnection().Query("select * from employee")
@@ -24,7 +24,7 @@ func AllEmployees() []domain.Employee {
 	}
 	for result.Next() {
 		emp := domain.Employee{}
-		err = result.Scan(&emp.ID, &emp.Name, &emp.Age, &emp.Gender, &emp.Email, &emp.Mobile, &emp.City, &emp.State)
+		err = result.Scan(&emp.ID, &emp.Name, &emp.Age, &emp.Gender, &emp.Email, &emp.Mobile, &emp.City, &emp.State, &emp.Country)
 		if err != nil {
 			panic(err)
 		}
@@ -33,15 +33,15 @@ func AllEmployees() []domain.Employee {
 	return emps
 }
 
-func EmployeeInfoByID(id int) domain.Employee {
+func GetEmployeeInfoByID(id int) domain.Employee {
 
-	result := getConnection().QueryRow("select * from employee where id=$1", id)
+	result := getConnection().QueryRow("select * from employee where id=?", id)
 
 	if result.Err() != nil {
 		panic(result.Err().Error())
 	}
 	emp := domain.Employee{}
-	err := result.Scan(&emp.ID, &emp.Name, &emp.Age, &emp.Gender, &emp.Email, &emp.Mobile, &emp.City, &emp.State)
+	err := result.Scan(&emp.ID, &emp.Name, &emp.Age, &emp.Gender, &emp.Email, &emp.Mobile, &emp.City, &emp.State, &emp.Country)
 	if err != nil {
 		panic(err)
 	}
@@ -50,11 +50,12 @@ func EmployeeInfoByID(id int) domain.Employee {
 
 func AddEmployee(emp domain.Employee) bool {
 
-	query := `insert into Employee(Name, Age, Gender, Email, Mobile, City, State) 
-	values('$1', $2, '$3', '$4', '$5', '$6', '$7');
-	`
-	result, err := getConnection().Exec(query, emp.Name, emp.Age, emp.Gender, emp.Email, emp.Mobile, emp.City, emp.State)
+	stmt, err := getConnection().Prepare(`insert into Employee(Name, Age, Gender, Email, Mobile, City, State, Country) values(?,?,?,?,?,?,?,?);`)
+	if err != nil {
+		panic(err)
+	}
 
+	result, err := stmt.Exec(emp.Name, emp.Age, emp.Gender, emp.Email, emp.Mobile, emp.City, emp.State, emp.Country)
 	if err != nil {
 		panic(err)
 	}
@@ -63,9 +64,13 @@ func AddEmployee(emp domain.Employee) bool {
 }
 
 func EditEmployee(id int, emp domain.Employee) bool {
-	query := "update Employee set Name=$2, Age=$3, Gender=$4, Email=$5, Mobile=$6, City=$7, State=$8 where id=$1"
-	result, err := getConnection().Exec(query, id, emp.Name, emp.Age, emp.Gender, emp.Email, emp.Mobile, emp.City, emp.State)
 
+	stmt, err := getConnection().Prepare(`update Employee set Name=?, Age=?, Gender=?, Email=?, Mobile=?, City=?, State=?, Country=? where id=?`)
+	if err != nil {
+		panic(err)
+	}
+
+	result, err := stmt.Exec(emp.Name, emp.Age, emp.Gender, emp.Email, emp.Mobile, emp.City, emp.State, emp.Country, id)
 	if err != nil {
 		panic(err)
 	}
@@ -74,9 +79,13 @@ func EditEmployee(id int, emp domain.Employee) bool {
 }
 
 func RemoveEmployee(id int) bool {
-	query := "delete from employee where id=$1"
-	result, err := getConnection().Exec(query, id)
 
+	stmt, err := getConnection().Prepare("delete from Employee where id=?")
+	if err != nil {
+		panic(err)
+	}
+
+	result, err := stmt.Exec(id)
 	if err != nil {
 		panic(err)
 	}
